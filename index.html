@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Inline CSS for styling the filter row */
+    .filter-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .filter-section label {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    .filter-section select {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Align items in a row and add spacing */
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <img src="img/Logo.png" alt="Logo" class="logo">
+      <h2>Chào buổi sáng</h2>
+    </div>
+    <nav class="menu">
+      <ul>
+        <li id="dashboard-link" class="active" onclick="showSection('dashboard')"><i class="icon-dashboard"></i> Dashboard</li>
+        <li id="data-analyst-link" onclick="showSection('data-analyst')"><i class="icon-analytics"></i> Data Analyst</li>
+      </ul>
+    </nav>
+    <nav class="other-menu">
+      <ul>
+       <!-- <li><i class="icon-settings"></i> Settings</li>
+        <li><i class="icon-logout"></i> Log out</li> -->
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Dashboard Section -->
+    <div id="dashboard-section" class="section">
+      <div class="dashboard-container">
+        <div class="product-table">
+          <div class="date-picker">
+            <label for="date">Date</label>
+            <input type="date" id="date" value="2024-11-02">
+          </div>
+          <table id="dashboard-table" class="dashboard-table">
+            <thead>
+            <tr>
+              <th>PRODUCT ID</th>
+              <th>IMAGE</th>
+              <th>PRODUCT NAME</th>
+              <th>km</th>
+              <th>manufacturing CO2 (kg)</th>
+              <th>delivery CO2 (kg)</th>
+              <th>STATUS</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr id="product-rice">
+              <td>#11001</td>
+              <td><img src="img/Rice.png" alt="Rice" class="product-image"></td>
+              <td>Rice</td>
+              <td>5</td>
+              <td>5.1</td>
+              <td>10.5</td>
+              <td class="status delivering">Delivering</td>
+            </tr>
+            <tr id="product-chicken">
+
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="map-container">
+          <div id="map"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Analyst Section -->
+    <div id="data-analyst-section" class="section" style="display: none;">
+      <div class="stat-cards">
+        <div class="stat-card today-card">
+          <h3>Today's CO2 Emission</h3>
+          <p>100 kg</p>
+          <span class="stat-change positive">+3.4% from yesterday</span>
+        </div>
+        <div class="stat-card today-card">
+          <h3>Today's CO2 Delivery</h3>
+          <p>200 kg</p>
+          <span class="stat-change negative">-3.5% from yesterday</span>
+        </div>
+        <div class="stat-card today-card">
+          <h3>Today's CO2 Delivery</h3>
+          <p>300 kg</p>
+          <span class="stat-change negative">-0.7% from yesterday</span>
+        </div>
+      </div>
+
+
+      <!-- Filter Row -->
+      <div class="filter-section">
+        <div class="filter-group">
+          <label for="month">Month</label>
+          <select id="month">
+            <option>ALL</option>
+            <!-- Options for months -->
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="product-name">Product Name</label>
+          <select id="product-name" onchange="randomizeProductName()">
+            <option>Rice</option>
+            <option>Chicken</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="year">Year</label>
+          <select id="year">
+            <option>2024</option>
+            <!-- Options for years -->
+          </select>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h3>CO2 (kg)</h3>
+        <canvas id="co2Chart"></canvas>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="script.js"></script>
+<script>
+  function showSection(section) {
+    document.getElementById('dashboard-section').style.display = section === 'dashboard' ? 'block' : 'none';
+    document.getElementById('data-analyst-section').style.display = section === 'data-analyst' ? 'block' : 'none';
+
+    // Update active state on menu
+    document.getElementById('dashboard-link').classList.toggle('active', section === 'dashboard');
+    document.getElementById('data-analyst-link').classList.toggle('active', section === 'data-analyst');
+  }
+
+  // Generate random CO2 data for the chart
+  function generateRandomData(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("co2Chart").getContext("2d");
+
+    // Dữ liệu cho sản phẩm Rice và Chicken
+    const riceData = Array.from({ length: 10 }, () => generateRandomData(150000, 200000));
+    const chickenData = Array.from({ length: 10 }, () => generateRandomData(100000, 150000));
+    const labels = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+
+    // Khởi tạo biểu đồ với dữ liệu mặc định (Rice)
+    const co2Chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "CO2/kg",
+          data: riceData,
+          backgroundColor: "rgba(75, 192, 192, 0.6)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "Month"
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "CO2 (kg)"
+            }
+          }
+        }
+      }
+    });
+
+    // Lắng nghe sự kiện thay đổi của Product Name
+    document.getElementById("product-name").addEventListener("change", function (event) {
+      const selectedProduct = event.target.value;
+      let newData;
+
+      // Chọn dữ liệu dựa trên sản phẩm được chọn
+      if (selectedProduct === "Rice") {
+        newData = riceData;
+      } else if (selectedProduct === "Chicken") {
+        newData = chickenData;
+      }
+
+      // Cập nhật dữ liệu biểu đồ và làm mới
+      co2Chart.data.datasets[0].data = newData;
+      co2Chart.update();
+    });
+  });
+
+</script>
+</body>
+</html>
